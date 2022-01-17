@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<!-- <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests"> -->
+		<title>江阴大屏-wgs84</title>
+		<link href="../source/index.css"
+			rel="stylesheet">
+		<link href="https://cesium.com/downloads/cesiumjs/releases/1.73/Build/Cesium/Widgets/widgets.css"
+			rel="stylesheet">
+		<script src="https://cesium.com/downloads/cesiumjs/releases/1.73/Build/Cesium/Cesium.js"></script>
+		<script src="./PolylineTrailLinkMaterialProperty.js"></script>
+		<style>
+			html,
+			body,
+			#cesiumContainer {
+				height: 100%;
+				width: 100%;
+				padding: 0;
+				margin: 0;
+			}
+		</style>
+	</head>
+	<body>
+		<div id="cesiumContainer"></div>
+		<!-- 四边遮罩 -->
+		<div class="left-shade"></div>
+		<div class="right-shade"></div>
+		<div class="bottom-shade"></div>
+		<div class="top-shade"></div>
+		
+		<script>
+			Cesium.Ion.defaultAccessToken =
+				'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI3N2FhYzAyOC1kYzcxLTQwZWUtYWI2MC0wNDJhZTJhZGQ4ZTIiLCJpZCI6MzQyMzUsImlhdCI6MTYwMDA0OTU5NH0.SlTb3WwEkqzriXXOnS6mW3qnICyxH84BF9l6UuAh8ao';
+
+			const viewer = new Cesium.Viewer('cesiumContainer', {
+				infoBox: false,
+				selectionIndicator: false,
+				animation: false,
+				timeline: false,
+				fullscreenButton: false,
+				homeButton: false,
+				sceneModePicker: false,
+				geocoder: false,
+				baseLayerPicker: false,
+				navigationHelpButton: false,
+				
+				// 地形夸张系数
+				terrainExaggeration: 1.5,
+				terrainProvider: Cesium.createWorldTerrain(),
+				// terrainProvider: new Cesium.CesiumTerrainProvider({
+				// 	url: 'https://www.supermapol.com/realspace/services/3D-stk_terrain/rest/realspace/datas/info/data/path',
+				// 	// url: 'https://basin.csceccloud.net:9000/tomcat/dem/pukou_tiles/gcj02',
+				// 	isSct: false
+				// }),
+				imageryProvider: new Cesium.UrlTemplateImageryProvider({
+					// url : 'https://server.arcgisonline.com/arcgis/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
+					url: "https://t0.tianditu.gov.cn/img_w/wmts?service=wmts&request=GetTile&version=1.0.0&LAYER=img&tileMatrixSet=w&TileMatrix={z}&TileRow={y}&TileCol={x}&style=default&format=tiles&tk=f484caa12ea994ef1543e56b4fe79b50",
+					// url: "https://webst01.is.autonavi.com/appmaptile?style=6&x={x}&y={y}&z={z}",
+					maximumLevel: 18
+				})
+			});
+			if (Cesium.FeatureDetection.supportsImageRenderingPixelated()) { //判断是否支持图像渲染像素化处理
+				viewer.resolutionScale = window.devicePixelRatio;
+			}
+			//是否开启抗锯齿
+			// viewer.scene.fxaa = false;
+			// viewer.scene.postProcessStages.fxaa.enabled = false;
+			// 去掉logo水印
+			viewer.cesiumWidget.creditContainer.style.display = "none";
+			viewer.scene.globe.depthTestAgainstTerrain = false; //解决地形遮挡entity问题
+
+			let scene = viewer.scene;
+			// scene.fog.density = 0.005
+			
+			// 视角定位 flyTo、setView
+			// viewer.camera.setView({
+			scene.camera.setView({
+				destination: Cesium.Cartesian3.fromDegrees(120.343182, 31.608262, 15000),
+				orientation: {
+					heading: Cesium.Math.toRadians(0.0),
+					pitch: Cesium.Math.toRadians(-35.0),
+				}
+			});
+			
+			// viewer.camera.changed.addEventListener(()=>{
+			// 	// 当前高度
+			// 	let height= viewer.camera.positionCartographic.height;
+			// });
+			
+			var startPoint = {
+				name: '运维中心',
+				lnglat: [120.343182, 31.808262]
+			};
+
+			function addCenter() {
+				var billboardPosition = 0;
+				var billboardPositionFlag = true;
+				var billboard = {
+					image: './center.png',
+					width: 120,
+					height: 80,
+					horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
+					verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+					pixelOffset: new Cesium.Cartesian2(0, 0),
+					scale: new Cesium.CallbackProperty(billboardCallbackProperty, false)
+					// eyeOffset: new Cesium.Cartesian3(0, 0, -10000),
+				}
+				var ellipse = {
+					semiMinorAxis: new Cesium.CallbackProperty(changeR1, false),
+					semiMajorAxis: new Cesium.CallbackProperty(changeR2, false),
+					height: 2,
+					material: new Cesium.ImageMaterialProperty({
+						image: "./1.png",
+						// color: Cesium.Color.RED.withAlpha(1),
+						repeat: new Cesium.Cartesian2(1.0, 1.0),
+						transparent: true,
+					})
+				};
+				var gltf = new Cesium.Entity({
+					id: 11,
+					name: startPoint.name,
+					description: startPoint.name,
+					position: new Cesium.Cartesian3.fromDegrees(startPoint.lnglat[0], startPoint.lnglat[1], 100),
+					billboard: billboard,
+					ellipse: ellipse
+				})
+				viewer.entities.add(gltf);
+			}
+			
+
+			var billboardScale = 1;
+			var billboardScaleFlag = true;
+			function billboardCallbackProperty() {
+				if (billboardScaleFlag) {
+					billboardScale = billboardScale - 0.001
+					if (billboardScale <= 0.95) {
+						billboardScaleFlag = false
+					}
+				} else {
+					billboardScale = billboardScale + 0.001
+					if (billboardScale >= 1.05) {
+						billboardScaleFlag = true
+					}
+				}
+				return billboardScale
+			}
+			
+			/**
+			 * 添加水厂数据
+			 */
+			function getSewage() {
+				var dataSourceURL = '../source/data/wgs84/jiedao.geojson'
+				Cesium.GeoJsonDataSource.load(dataSourceURL).then((dataSource) => {
+					var entities = dataSource.entities.values;
+					addSewageEntity(entities)
+					addSewageLine(entities)
+				});
+			}
+
+			let minR = 50; //最小半径
+			let minR1 = 50; //最小半径
+			let maxR = 1250; // 最大半径
+			let deviationR = 1; // 每次增加的大小
+			function changeR1() {
+				minR = minR + deviationR; //deviationR为每次圆增加的大小
+				if (minR >= maxR) {
+					minR = 50;
+				}
+				return minR;
+			}
+
+			function changeR2() {
+				minR1 = minR1 + deviationR; //deviationR为每次圆增加的大小
+				if (minR1 >= maxR) {
+					minR1 = 50;
+				}
+				return minR1;
+			}
+
+			var minScale = 0
+			var maxScale = 1
+			let deviationScale = 0.005; // 每次增加的大小
+			function changeScale() {
+				minScale = minScale + deviationScale; //deviationR为每次圆增加的大小
+				if (minScale >= maxScale) {
+					minScale = 0;
+				}
+				// console.log(minScale)
+				return minScale;
+			}
+
+			function getSewageBillBoard() {
+				var billboard = {
+					image: './jiedao.png',
+					width: 100,
+					height: 66,
+					horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
+					verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+					pixelOffset: new Cesium.Cartesian2(0, 0),
+					// scale: new Cesium.CallbackProperty(changeScale, false),
+					// eyeOffset: new Cesium.Cartesian3(0, 0, -10000),
+					color: new Cesium.Color(1.0, 1.0, 1.0, 1),
+				};
+				return billboard;
+			}
+
+			function getSewageLabel(name) {
+				var label = {
+					text: name,
+					font: "normal 16px Microsoft YaHei",
+					outlineWidth: 2,
+					horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
+					verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+					pixelOffset: new Cesium.Cartesian2(0, -45),
+					scale: 1,
+					fillColor: Cesium.Color.WHITE,
+					showBackground: true,
+					backgroundColor: Cesium.Color.BLACK.withAlpha(0.4) //Cesium.Color.BLACK.withAlpha(0.4)
+				};
+				return label;
+			}
+
+			function getSewageEllipse() {
+				var ellipse = {
+					semiMinorAxis: new Cesium.CallbackProperty(changeR1, false),
+					semiMajorAxis: new Cesium.CallbackProperty(changeR2, false),
+					height: 2,
+					material: new Cesium.ImageMaterialProperty({
+						image: "./1.png",
+						repeat: new Cesium.Cartesian2(1.0, 1.0),
+						transparent: true,
+					})
+				};
+				return ellipse;
+			}
+
+			function addSewageEntity(entities) {
+				var sewageCustomDataSource = new Cesium.CustomDataSource('sewageEntityCollection')
+				viewer.dataSources.add(sewageCustomDataSource)
+				entities.forEach(entity => {
+					entity.billboard = getSewageBillBoard();
+					entity.label = getSewageLabel(entity.name)
+					entity.ellipse = getSewageEllipse();
+					sewageCustomDataSource.entities.add(entity)
+				})
+			}
+
+			/**
+			 * 添加曲线
+			 */
+			function addSewageLine(entities) {
+				var sewageLineCustomDataSource = new Cesium.CustomDataSource('sewageLineCollection')
+				viewer.dataSources.add(sewageLineCustomDataSource)
+				//自定义动画材质
+				material = new Cesium.PolylineTrailLinkMaterialProperty(Cesium.Color.AQUA, 3000);
+				entities.forEach(entity => {
+					var startP = Cesium.Cartesian3.fromDegrees(startPoint.lnglat[0], startPoint.lnglat[1], 0)
+					var curvePointsArr = generateCurve(entity.position.getValue(), startP)
+					sewageLineCustomDataSource.entities.add({
+						polyline: {
+							positions: curvePointsArr,
+							width: 2,
+							material: Cesium.Color.AQUA.withAlpha(0.5)
+						}
+					});
+					sewageLineCustomDataSource.entities.add({
+						polyline: {
+							positions: curvePointsArr,
+							width: 4,
+							material: material
+						}
+					});
+				})
+			}
+
+			/**
+			 * 获取高度曲线坐标
+			 */
+			function generateCurve(startPoint, endPoint) {
+				let addPointCartesian = new Cesium.Cartesian3();
+				Cesium.Cartesian3.add(startPoint, endPoint, addPointCartesian);
+				let midPointCartesian = new Cesium.Cartesian3();
+				Cesium.Cartesian3.divideByScalar(addPointCartesian, 2, midPointCartesian);
+				let midPointCartographic = Cesium.Cartographic.fromCartesian(midPointCartesian);
+				midPointCartographic.height = Cesium.Cartesian3.distance(startPoint, endPoint) / 9;
+				let midPoint = new Cesium.Cartesian3();
+				Cesium.Ellipsoid.WGS84.cartographicToCartesian(midPointCartographic, midPoint);
+				let spline = new Cesium.CatmullRomSpline({
+					times: [0.0, 0.5, 1.0],
+					points: [startPoint, midPoint, endPoint]
+				});
+				let curvePointsArr = [];
+				for (let i = 0, len = 300; i < len; i++) {
+					curvePointsArr.push(spline.evaluate(i / len));
+				}
+				return curvePointsArr;
+			}
+
+			// 左键点击事件
+			var handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
+			handler.setInputAction(function(movement) {
+				var pick = viewer.scene.pick(movement.position);
+				if (Cesium.defined(pick)) {
+					console.log(pick.id._name);
+				}
+			}, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+
+			// 添加行政边界线
+			function addDistrictLine() {
+				viewer.dataSources.add(
+					Cesium.GeoJsonDataSource.load('../source/data/wgs84/districtPolyline.geojson', {
+						stroke: Cesium.Color.YELLOW,
+						strokeWidth: 3,
+						clampToGround: true, // 贴地
+					})
+				);
+			}
+			
+			// 道路线数据
+			function addRoadnet() {
+				var promiseroute11 = Cesium.GeoJsonDataSource.load('../source/data/wgs84/roadnet.geojson', {
+					clampToGround: true, // 贴地
+				});
+				promiseroute11.then((dataSource) => {
+					viewer.dataSources.add(dataSource);
+					Routes11 = dataSource.entities.values;
+					for (var i = 0; i < Routes11.length; i++) {
+						var line = Routes11[i];
+						line.polyline.material = Cesium.Color.WHITE.withAlpha(0.5)
+						// line.polyline.material = new Cesium.PolylineGlowMaterialProperty({ //设置Glow材质
+						// 	glowPower: 0.1,
+						// 	color: Cesium.Color.ORANGERED.withAlpha(0.9)
+						// })
+						line.polyline.width = 1;
+					}
+				}).otherwise(function(error) {
+					console.log(error);
+				});
+			}
+
+			// 水面材质
+			var riverMaterial = new Cesium.Material({
+				fabric: {
+					type: "Water",
+					uniforms: {
+						normalMap: Cesium.buildModuleUrl(
+							"Assets/Textures/waterNormals.jpg"
+						),
+						frequency: 100.0, // 控制波数的数字。
+						animationSpeed: 0.01, // 控制水的动画速度的数字。
+						amplitude: 2.0, // 控制水波振幅的数字。
+						specularIntensity: 0.2, // 控制镜面反射强度的数字。
+					},
+				},
+			});
+
+			/**
+			 * 加载水面方式一
+			 */
+			function addWaterLayer1() {
+				//加载线数据
+				var promiseroute11 = Cesium.GeoJsonDataSource.load('../source/data/wgs84/river.geojson');
+				promiseroute11.then((dataSource) => {
+					dataSource.entities.values.forEach(e => {
+						let riverPolygon = viewer.scene.primitives.add(new Cesium.GroundPrimitive({
+							geometryInstances: new Cesium.GeometryInstance({
+								geometry: new Cesium.PolygonGeometry({
+									polygonHierarchy: new Cesium.PolygonHierarchy(
+										e.polygon.hierarchy.getValue().positions
+									),
+									vertexFormat: Cesium.EllipsoidSurfaceAppearance
+										.VERTEX_FORMAT,
+									height: 0,
+									extrudedHeight: 0
+								})
+							}),
+							appearance: new Cesium.EllipsoidSurfaceAppearance({
+								aboveGround: true,
+								material: riverMaterial
+							}),
+							show: true
+						}))
+					})
+
+				}).otherwise((error) => {
+					console.log(error);
+				});
+			}
+			
+
+			/**
+			 * 加载水面方式二
+			 */
+			function addWaterLayer2() {
+				var promise = Cesium.GeoJsonDataSource.load('../source/data/wgs84/river.geojson');
+				//数据加载后渲染
+				promise.then((dataSource) => {
+					let instances = [];
+					dataSource.entities.values.forEach((e) => {
+						let geometry = new Cesium.GeometryInstance({
+							geometry: new Cesium.PolygonGeometry({
+								polygonHierarchy: new Cesium.PolygonHierarchy(
+									e.polygon.hierarchy.getValue().positions
+								),
+								extrudedHeight: 0,
+								height: 0,
+								vertexFormat: Cesium.EllipsoidSurfaceAppearance
+									.VERTEX_FORMAT,
+							}),
+						});
+						instances.push(geometry);
+					});
+					let primitive = new Cesium.GroundPrimitive({
+						geometryInstances: instances, //合并
+						appearance: new Cesium.EllipsoidSurfaceAppearance({
+							aboveGround: true, //在椭球面上
+							material: riverMaterial
+						}),
+					});
+					viewer.scene.primitives.add(primitive);
+				});
+			}
+			
+			function addWaterLayer() {
+				viewer.dataSources.add(
+					Cesium.GeoJsonDataSource.load('../source/data/wgs84/river.geojson', {
+						fill: new Cesium.Color(25/255, 147/255, 181/255, 0.8),
+						clampToGround: true, // 贴地
+					})
+				);
+			}
+			
+			// 增加楼块儿
+			function addBuildings(){
+				var palaceTileset = new Cesium.Cesium3DTileset({
+					url: 'https://basin.csceccloud.net:9000/tomcat/jiangyin/buildings84-blue/tileset.json'
+				})
+				palaceTileset.readyPromise.then((argument)=> {
+					console.log('准备加载楼块儿')
+					viewer.scene.primitives.add(palaceTileset);
+				})
+			}
+			
+			
+			addCenter()
+			getSewage()
+			// addWaterLayer()
+			// addWaterLayer1()
+			addWaterLayer2()
+			addRoadnet()
+			addDistrictLine()
+			addBuildings()
+		</script>
+		</div>
+	</body>
+</html>

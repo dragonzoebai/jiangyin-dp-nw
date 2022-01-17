@@ -1,0 +1,34 @@
+
+.top-shade {
+	position: absolute;
+	top: 0px;
+	height: 150px;
+	width: 100%;
+	background: linear-gradient(0deg, rgba(0, 0, 0, 0) 0%, #00154b 100%);
+}
+
+.left-shade {
+	position: absolute;
+	top: 0px;
+	left: 0px;
+	width: 450px;
+	height: 100%;
+	background: linear-gradient(270deg, rgba(0, 0, 0, 0) 0%, #00154b 100%);
+}
+
+.right-shade {
+	position: absolute;
+	top: 0px;
+	right: 0px;
+	width: 450px;
+	height: 100%;
+	background: linear-gradient(90deg, rgba(0, 0, 0, 0) 0%, #00154b 100%);
+}
+
+.bottom-shade {
+	position: absolute;
+	bottom: 0px;
+	width: 100%;
+	height: 150px;
+	background: linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, #00154b 100%);
+}

@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<title>江阴大屏</title>
+		<script src="https://cesium.com/downloads/cesiumjs/releases/1.73/Build/Cesium/Cesium.js"></script>
+		<link href="https://cesium.com/downloads/cesiumjs/releases/1.73/Build/Cesium/Widgets/widgets.css"
+			rel="stylesheet">
+		<style>
+			html,
+			body,
+			#cesiumContainer {
+				height: 100%;
+				width: 100%;
+				padding: 0;
+				margin: 0;
+			}
+		</style>
+	</head>
+	<body>
+		<div id="cesiumContainer"></div>
+		<script>
+			Cesium.Ion.defaultAccessToken =
+				'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI3N2FhYzAyOC1kYzcxLTQwZWUtYWI2MC0wNDJhZTJhZGQ4ZTIiLCJpZCI6MzQyMzUsImlhdCI6MTYwMDA0OTU5NH0.SlTb3WwEkqzriXXOnS6mW3qnICyxH84BF9l6UuAh8ao';
+
+			const viewer = new Cesium.Viewer('cesiumContainer', {
+				terrainExaggeration: 1,
+				infoBox: false,
+				selectionIndicator: false,
+				imageryProvider: new Cesium.UrlTemplateImageryProvider({
+					// url: "http://t0.tianditu.com/img_w/wmts?service=wmts&request=GetTile&version=1.0.0&LAYER=img&tileMatrixSet=w&TileMatrix={z}&TileRow={y}&TileCol={x}&style=default&format=tiles&tk=f484caa12ea994ef1543e56b4fe79b50",
+					url: "https://webst01.is.autonavi.com/appmaptile?style=6&x={x}&y={y}&z={z}",
+					maximumLevel: 18
+				})
+			});
+			// 视角定位 flyTo、setView
+			// viewer.camera.setView({
+			viewer.scene.camera.setView({
+				destination: Cesium.Cartesian3.fromDegrees(120.343182, 31.808262, 15000),
+				orientation: {
+					heading: Cesium.Math.toRadians(0.0),
+					pitch: Cesium.Math.toRadians(-35.0),
+				}
+			});
+
+			var riverMaterial = new Cesium.Material({
+				fabric: {
+					type: "Water",
+					uniforms: {
+						// specularMap: "../images/earthspec1k.jpg",
+						normalMap: Cesium.buildModuleUrl(
+							"Assets/Textures/waterNormals.jpg"
+						),
+						frequency: 10000.0, // 控制波数的数字。
+						animationSpeed: 0.02, // 控制水的动画速度的数字。
+						amplitude: 5.0, // 控制水波振幅的数字。
+						specularIntensity: 0.8, // 控制镜面反射强度的数字。
+					},
+				},
+			});
+
+			//data就是geojson数据  
+			function AddWaterLayer() {
+				var promise = Cesium.GeoJsonDataSource.load('../source/data/gcj02/river.geojson');
+				//数据加载后渲染
+				promise.then((ds) => {
+					let instances = [];
+					let entitys = ds.entities.values;
+					entitys.forEach((e) => {
+						let geometry = new Cesium.GeometryInstance({
+							geometry: new Cesium.PolygonGeometry({
+								polygonHierarchy: new Cesium.PolygonHierarchy(
+									e.polygon.hierarchy.getValue().positions
+								),
+								extrudedHeight: 0,
+								height: 0,
+								vertexFormat: Cesium.EllipsoidSurfaceAppearance
+									.VERTEX_FORMAT,
+							}),
+							attributes: {
+								color: Cesium.ColorGeometryInstanceAttribute.fromColor(
+									Cesium.Color.fromRandom({
+										alpha: 0.5,
+									})
+								),
+							},
+						});
+						instances.push(geometry);
+					});
+					let primitive = new Cesium.GroundPrimitive({
+						geometryInstances: instances, //合并
+						//某些外观允许每个几何图形实例分别指定某个属性
+						appearance: new Cesium.EllipsoidSurfaceAppearance({
+							aboveGround: true, //在椭球面上
+							material: riverMaterial
+						}),
+					});
+					viewer.scene.primitives.add(primitive);
+					viewer.zoomTo(primitive);
+				});
+			}
+			AddWaterLayer()
+		</script>
+		</div>
+	</body>
+</html>

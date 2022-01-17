@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>江阴市amap深色</title>
+		<style>
+			html,
+			body,
+			#map {
+				width: 100%;
+				height: 100%;
+				margin: 0;
+				padding: 0;
+			}
+			.amap-maps{
+				background-color: #000;
+			}
+		</style>
+	</head>
+
+	<body>
+		<div id="map"></div>
+		<script src="https://cdn.bootcdn.net/ajax/libs/jquery/1.10.0/jquery.min.js"></script>
+		<script
+			src="https://webapi.amap.com/maps?v=2.0&key=aafaa3ac90c4c7dd7aa48eb587a5c66f&plugin=AMap.Scale,AMap.ToolBar,AMap.GeoJSON,AMap.DistrictSearch">
+		</script>
+		<script src="https://webapi.amap.com/loca?v=2.0.0&key=aafaa3ac90c4c7dd7aa48eb587a5c66f"></script>
+		<script>
+			var map;
+			var loca;
+			$.getJSON("../source/data/gcj02/border.geojson", (result) => {
+				map = new AMap.Map('map', {
+					mask: result.features[0].geometry.coordinates,
+					zoom: 11.8,
+					center: [120.343182, 31.808262],
+					showLabel: false,
+					viewMode: '3D',
+					pitch: 50,
+					rotation: 0,
+					features: ['bg', 'building'], // 'bg', 'road', 'building', 'point'
+					// layers: [new AMap.TileLayer.Satellite()], // new AMap.TileLayer.RoadNet()
+					// mapStyle: 'amap://styles/0b7f2aecffe8113ba5f3ebe55c8a1b45',
+					mapStyle: 'amap://styles/darkblue',
+				}).on('complete', () => {
+					// addCenter()
+					floorGeoJsonAjax()
+					addLoca()
+					// setTimeout(animate, 2000);
+				});
+			});
+			
+			function addCenter(){
+				map.add(
+					new AMap.Marker({
+						anchor: 'bottom-center',
+						position: [120.301344, 31.868901, 100],
+						icon: new AMap.Icon({
+							size: new AMap.Size(150, 100),
+							imageSize: new AMap.Size(150, 100),
+							image: "../source/img/rudongxian.png"
+						}),
+					})
+				);
+			}
+			
+			function addLoca(){
+				loca = new Loca.Container({
+					map,
+				});
+				loca.animate.start();
+				addLocaCenter();
+				addLocaPolygon();
+				addLocaScatter();
+				addLocaPolyline();
+				addLocaRoad();
+			}
+			
+			function addLocaCenter() {
+				// var geo = new Loca.GeoJSONSource({
+				// 	url: '../source/data/gcj02/jiedao.geojson',
+				// });
+			
+				var geo = new Loca.GeoJSONSource({
+					data: {
+						"type": "FeatureCollection",
+						"features": [{
+							"type": "Feature",
+							"geometry": {
+								"type": "Point",
+								"coordinates": [120.301344, 31.868901]
+							},
+							"properties": {
+								"id": 1,
+								"name": "江阴市",
+							}
+						}]
+					}
+				});
+				
+				// 文字主体图层
+				var zMarker = new Loca.ZMarkerLayer({
+					loca: loca,
+					zIndex: 120,
+				});
+				zMarker.setSource(geo);
+				zMarker.setStyle({
+					content: (i, feat) => {
+						var props = feat.properties;
+						return (
+							'<div style="width: 490px; height: 490px;">' +
+							'<p style="display: block; color: #FFF; font-size: 80px; text-align:center;background:rgba(0,0,0,0.4);border-radius: 15px; border:4px solid rgba(172, 137, 51, 1)">' +
+							props['name'] +
+							'</p></div>'
+						);
+					},
+					unit: 'meter',
+					rotation: 0,
+					alwaysFront: true,
+					size: [4900, 4900],
+					altitude: 0,
+				});
+				
+				// 浮动三角
+				var triangleZMarker = new Loca.ZMarkerLayer({
+					loca: loca,
+					zIndex: 119,
+				});
+				triangleZMarker.setSource(geo);
+				triangleZMarker.setStyle({
+					content: (i, feat) => {
+						return (
+							'<div style="width: 120px; height: 120px; background: url(https://a.amap.com/Loca/static/loca-v2/demos/images/triangle_yellow.png);"></div>'
+						);
+					},
+					unit: 'meter',
+					rotation: 0,
+					alwaysFront: true,
+					size: [4000, 4000],
+					altitude: 15,
+				});
+				triangleZMarker.addAnimate({
+					key: 'altitude',
+					value: [0, 10],
+					random: true,
+					transform: 1000,
+					delay: 2000,
+					yoyo: true,
+					repeat: 999999,
+				});
+				
+				// 呼吸点 金色
+				var scatterYellow = new Loca.ScatterLayer({
+					loca,
+					zIndex: 110,
+					opacity: 1,
+					visible: true,
+					zooms: [2, 26],
+					depth: false
+				});
+				scatterYellow.setSource(geo);
+				scatterYellow.setStyle({
+					unit: 'meter',
+					size: function(i, feat) {
+						return [5000, 5000];
+					},
+					texture: 'https://a.amap.com/Loca/static/loca-v2/demos/images/scan_yellow.png',
+					altitude: 20,
+					duration: 2000,
+					animate: true,
+				});
+			}
+			
+			// 添加棱柱
+			function addLocaPolygon(){
+				var geo = new Loca.GeoJSONSource({
+					url: '../source/data/gcj02/districtPolygon.geojson',
+				});
+				pl = new Loca.PolygonLayer({
+					// loca,
+					zIndex: 120,
+					opacity: 0.3,
+					cullface: 'none',
+					shininess: 1000,
+					hasSide: true,
+				});
+				pl.setSource(geo);
+				pl.setStyle({
+					topColor: (index, feature) => {
+						return feature.properties.color;
+					},
+					sideTopColor: '#00f',
+					sideBottomColor: '#0674b1',
+					height: (index, feature) => {
+						return feature.properties.height;
+					},
+					altitude: 0,
+				});
+				loca.add(pl);
+			}
+			
+			// 呼吸点
+			function addLocaScatter(){
+				var scatter = new Loca.ScatterLayer({
+					loca,
+					zIndex: 10,
+					opacity: 1,
+					visible: true,
+					zooms: [2, 16],
+				});
+				var pointGeo = new Loca.GeoJSONSource({
+					url: '../source/data/gcj02/jiedao.geojson',
+				});
+				scatter.setSource(pointGeo);
+				scatter.setStyle({
+					unit: 'meter',
+					size: [3000, 3000],
+					borderWidth: 0,
+					texture: '../source/img/breath_red.png',
+					duration: 1000,
+					animate: true,
+				});
+				loca.add(scatter);
+			}
+			
+			// 飞线
+			function addLocaPolyline(){
+				var pulseLink = new Loca.PulseLinkLayer({
+					// loca,
+					zIndex: 10,
+					opacity: 1,
+					visible: true,
+					zooms: [2, 22],
+					depth: true,
+				});
+				var geo = new Loca.GeoJSONSource({
+					url: '../source/data/gcj02/line.geojson',
+				});
+				pulseLink.setSource(geo);
+				pulseLink.setStyle({
+					unit: 'meter',
+					dash: [100, 0, 100, 0],
+					lineWidth: () => {
+						return [200, 100];
+					},
+					height: (index, feat) => {
+						return feat.distance / 3;
+					},
+					smoothSteps: 30,
+					speed: (index, prop) => {
+						return 1000;
+					},
+					flowLength: 2000,
+					lineColors: (index, feat) => {
+						return ['rgb(0, 206, 209)', 'rgb(0, 206, 209)', 'rgba(0, 206, 209,1)'];
+					},
+					maxHeightScale: 0.5, // 弧顶位置比例
+					headColor: 'rgba(255, 255, 255, 1)',
+					trailColor: 'rgba(255, 255, 255, 0.1)',
+				});
+				loca.add(pulseLink);
+			}
+			
+			// 路网
+			function addLocaRoad(){
+				var roadgeo = new Loca.GeoJSONSource({
+					url: '../source/data/gcj02/roadnet.geojson',
+				});
+				var roadlayer = new Loca.PulseLineLayer({
+					// loca,
+					zIndex: 9,
+					opacity: 1,
+					visible: true,
+					zooms: [2, 22],
+				});
+				roadlayer.setSource(roadgeo);
+				roadlayer.setStyle({
+					altitude: 0,
+					lineWidth: 2,
+					// 脉冲头颜色
+					headColor: (_, feature) => {
+						return '#ffff00';
+					},
+					// 脉冲尾颜色
+					trailColor: 'rgba(128, 128, 128, 0.5)',
+					// 脉冲长度，0.25 表示一段脉冲占整条路的 1/4
+					interval: 0.25,
+					// 脉冲线的速度，几秒钟跑完整段路
+					duration: 5000,
+				});
+				loca.add(roadlayer);
+			}
+
+			// 行政边界
+			function floorGeoJsonAjax() {
+				$.getJSON("../source/data/gcj02/districtPolygon.geojson", (result) => {
+					var floorGeoJson = new AMap.GeoJSON({
+						geoJSON: result,
+						getPolygon: (geojson, lnglats) => {
+							return new AMap.Polygon({
+								path: lnglats,
+								fillOpacity: 0,
+								fillColor: geojson.properties.color,
+								strokeColor: '#0000ff',
+								strokeWeight: 1,
+							});
+						}
+					});
+					map.add(floorGeoJson);
+				});
+			}
+
+
+			// 视角旋转动画
+			function animate() {
+				loca.viewControl.addAnimates([{
+					rotation: {
+						value: 360,
+						control: [
+							[0, 180],
+							[1, 360]
+						],
+						timing: [1, 1, 1, 1],
+						duration: 200000,
+					},
+				}], () => {
+					loca.viewControl.addAnimates([{
+						rotation: {
+							value: 0,
+							control: [
+								[0, 180],
+								[1, 0]
+							],
+							timing: [1, 1, 1, 1],
+							duration: 200000,
+						}
+					}], () => {
+						setTimeout(animate, 2000);
+					});
+				});
+			}
+
+		</script>
+	</body>
+
+</html>

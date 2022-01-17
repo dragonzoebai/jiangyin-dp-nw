@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset='utf-8' />
+		<title>mapbox</title>
+		<meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+		<!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/mapbox-gl@2.5.1/dist/mapbox-gl.css">
+		<script src="https://cdn.jsdelivr.net/npm/mapbox-gl@2.5.1/dist/mapbox-gl.js"></script> -->
+		<link href="../source/index.css" rel="stylesheet">
+		<link href="./resource/mapbox-gl.min.css" rel="stylesheet">
+		<script src="./resource/mapbox-gl.min.js"></script>
+		<script src="https://cdn.bootcdn.net/ajax/libs/jquery/1.10.0/jquery.min.js"></script>
+		<style>
+			body {
+				margin: 0;
+				padding: 0;
+			}
+
+			#map {
+				position: absolute;
+				top: 0;
+				bottom: 0;
+				width: 100%;
+			}
+
+			.marker {
+				/* background: url("./image/loc.png"); */
+				background-position: center center;
+				width: 20px;
+				height: 20px;
+				display: flex;
+				display: -webkit-flex;
+				align-items: center;
+				justify-content: center;
+			}
+
+			.marker p {
+				/* background-color: rgba(0, 255, 255, 0.1); */
+				width: 10px;
+				height: 10px;
+				border-radius: 50%;
+				animation: myfirst 2s infinite;
+				box-shadow: 0px 0px 5px #0ff inset;
+			}
+
+			@keyframes myfirst {
+				10% {
+					transform: scale(0.1);
+				}
+
+				100% {
+					transform: scale(5);
+				}
+			}
+		</style>
+	</head>
+	<body>
+		<div id='map'></div>
+		<!-- 四边遮罩 
+		<div class="left-shade"></div>
+		<div class="right-shade"></div>
+		<div class="bottom-shade"></div>
+		<div class="top-shade"></div>
+		-->
+		<script>
+			mapboxgl.accessToken =
+				'pk.eyJ1IjoiZHJhZ29uem9lYmFpIiwiYSI6ImNrcDZlZjd3ODAwN2Uyd21qdWlpdGRqdWUifQ.-4OIwa9MuCxHvVxS0mbV0g';
+			var style = {
+				"version": 8,
+				"name": "Dark",
+				// 本地化时矢量上文字使用
+				"glyphs": "mapbox://fonts/mapbox/{fontstack}/{range}.pbf",
+				"sources": {
+					"XYZTile-tianditu": {
+						"type": "raster",
+						"tiles": [
+							'http://webst01.is.autonavi.com/appmaptile?style=6&x={x}&y={y}&z={z}',
+							// "http://t0.tianditu.com/img_w/wmts?service=wmts&request=GetTile&version=1.0.0&LAYER=img&tileMatrixSet=w&TileMatrix={z}&TileRow={y}&TileCol={x}&style=default&format=tiles&tk=f484caa12ea994ef1543e56b4fe79b50"
+						],
+						"tileSize": 256
+					},
+					"XYZTile-tianditu1": {
+						"type": "raster",
+						"tiles": [
+							'http://webst01.is.autonavi.com/appmaptile?style=8&x={x}&y={y}&z={z}',
+							// "http://t0.tianditu.com/cia_w/wmts?service=wmts&request=GetTile&version=1.0.0&LAYER=cia&tileMatrixSet=w&TileMatrix={z}&TileRow={y}&TileCol={x}&style=default&format=tiles&tk=f484caa12ea994ef1543e56b4fe79b50"
+						],
+						"tileSize": 256
+					},
+				},
+				"layers": [
+					// {
+					// 	"id": "XYZTile-tianditu",
+					// 	"type": "raster",
+					// 	"source": "XYZTile-tianditu",
+					// 	"minzoom": 0,
+					// 	"maxzoom": 18
+					// },
+					// {
+					// 	"id": "XYZTile-tianditu1",
+					// 	"type": "raster",
+					// 	"source": "XYZTile-tianditu1",
+					// 	"minzoom": 0,
+					// 	"maxzoom": 18
+					// },
+				]
+			};
+			var map = new mapboxgl.Map({
+				container: 'map',
+				center: [120.301344, 31.868901],
+				zoom: 12,
+				// center: [118.571909, 32.048754],
+				// zoom: 11.5,
+				maxZoom: 17,
+				pitch: 50,
+				// style: 'mapbox://styles/mapbox/satellite-v9', // style URL
+				style: 'mapbox://styles/mapbox/streets-v11',
+				// style: 'mapbox://styles/mapbox/cjaudgl840gn32rnrepcb9b9g', // the outdoors-v10 style but without Hillshade layers
+				// style: style,
+			});
+
+			map.on('load', () => {
+				// mapFlyTo()
+				// addPoints()
+				// addPoints1()
+				// addSkyLayer()
+				// addTerrain()
+				// rotateCamera(0)
+				// addRiver();
+				// addDistrictPolyline();
+				addDistrictPolygon();
+				// addRoadnet();
+				// addBuildings();
+			});
+
+			function mapFlyTo() {
+				map.flyTo({
+					center: [118.571909, 32.048754],
+					zoom: 12,
+					speed: 0.2,
+					curve: 1
+				});
+			}
+
+			function addSkyLayer() {
+				map.addLayer({
+					'id': 'sky',
+					'type': 'sky',
+					'paint': {
+						'sky-type': 'atmosphere',
+						'sky-atmosphere-sun': [0.0, 0.0],
+						'sky-atmosphere-sun-intensity': 15
+					}
+				});
+			}
+
+			// 添加地形
+			function addTerrain() {
+				map.addSource('mapbox-dem', {
+					'type': 'raster-dem',
+					'url': 'mapbox://mapbox.mapbox-terrain-dem-v1',
+				});
+				map.setTerrain({
+					'source': 'mapbox-dem',
+					'exaggeration': 1.5
+				});
+			}
+
+			function addPoints() {
+				$.getJSON("../source/data/wgs84/jiedao.geojson", (result) => {
+					result.features.forEach((f) => {
+						var el = document.createElement('div');
+						el.className = 'marker';
+
+						// el.style.backgroundImage = 'url(../cesium/jiedao.png)';
+						// el.style.width = '118px';
+						// el.style.height = '75px';
+
+						var el1 = document.createElement('p');
+						el.appendChild(el1);
+						var el2 = document.createElement('span');
+						el1.appendChild(el2);
+
+						el.addEventListener('click', () => {
+							console.log(marker);
+						});
+
+						// new mapboxgl.Marker(el, {
+						// 		offset: [0, -35]
+						// 	})
+						// 	.setLngLat(f.geometry.coordinates)
+						// 	.addTo(map);
+
+						new mapboxgl.Marker(el)
+							.setLngLat(f.geometry.coordinates)
+							.addTo(map);
+
+					})
+				})
+			}
+
+			// 街道
+			function addPoints1() {
+				map.loadImage('../cesium/jiedao.png', (error, image) => {
+					map.addImage('jiedao', image);
+
+					$.getJSON("../source/data/wgs84/jiedao.geojson", (result) => {
+						map.addSource('jiedao', {
+							'type': 'geojson',
+							'data': result
+						});
+						// map.addLayer({
+						// 	'id': 'jiedao',
+						// 	'source': 'jiedao', // reference the data source
+						// 	'type': 'circle',
+						// 	'paint': {
+						// 		'circle-radius': 6,
+						// 		'circle-color': '#B42222'
+						// 	},
+						// });
+						map.addLayer({
+							'id': 'jiedao1',
+							'source': 'jiedao', // reference the data source
+							'type': 'symbol',
+							'layout': {
+								'icon-image': 'jiedao', // reference the image
+								'icon-size': 1,
+								"icon-offset": [0, -35],
+
+								'text-field': '{town_name}',
+								"text-anchor": "top",
+								"text-offset": [0, -3],
+								'text-justify': 'auto',
+								"text-font": ["Open Sans Regular"],
+							},
+							paint: {
+								"text-color": "#ffffff"
+							}
+						});
+
+					});
+				})
+
+				map.on('click', 'jiedao1', (e) => {
+					map.flyTo({
+						center: e.features[0].geometry.coordinates
+					});
+				});
+			}
+
+
+
+			// 地图缓慢旋转
+			function rotateCamera(timestamp) {
+				map.rotateTo((timestamp / 1000) % 360, {
+					duration: 0
+				});
+				requestAnimationFrame(rotateCamera);
+			}
+
+			// 水面
+			function addRiver() {
+				$.getJSON("../source/data/wgs84/river.geojson", (result) => {
+					map.addSource('river', {
+						'type': 'geojson',
+						'data': result
+					});
+					map.addLayer({
+						'id': 'river',
+						'type': 'fill',
+						'source': 'river', // reference the data source
+						'layout': {},
+						'paint': {
+							'fill-color': 'rgb(25, 147, 181)', // blue color fill
+							'fill-opacity': 0.8
+						}
+					});
+				});
+			}
+
+			// 行政边界线
+			function addDistrictPolyline() {
+				$.getJSON("../source/data/wgs84/districtPolygon.geojson", (result) => {
+					map.addSource('districtPolyline', {
+						'type': 'geojson',
+						'data': result
+					});
+					map.addLayer({
+						'id': 'districtPolygon1',
+						'type': 'fill',
+						'source': 'districtPolyline',
+						'layout': {},
+						'paint': {
+							'fill-color': 'rgb(25, 147, 181)', // blue color fill
+							'fill-opacity': 0.8,
+						}
+					});
+					map.addLayer({
+						'id': 'districtPolyline',
+						'type': 'line',
+						'source': 'districtPolyline',
+						'layout': {},
+						'paint': {
+							'line-color': '#ff0',
+							'line-width': 3
+						}
+					});
+				});
+			}
+
+			function addDistrictPolygon() {
+				$.getJSON("../source/data/wgs84/districtPolygon.geojson", (result) => {
+					map.addSource('districtPolygon', {
+						'type': 'geojson',
+						'data': result
+					});
+					map.addLayer({
+						'id': 'districtPolygon',
+						'type': 'fill-extrusion',
+						'source': 'districtPolygon',
+						'layout': {},
+						'paint': {
+							'fill-extrusion-color': ['get', 'color'],
+							'fill-extrusion-height': ['get', 'height'],
+							'fill-extrusion-base': 0,
+							'fill-extrusion-opacity': 0.5
+						}
+					});
+				});
+			}
+
+			// 道路线
+			function addRoadnet() {
+				$.getJSON("../source/data/wgs84/roadnet.geojson", (result) => {
+					map.addSource('roadnet', {
+						'type': 'geojson',
+						'data': result
+					});
+					map.addLayer({
+						'id': 'roadnet',
+						'type': 'line',
+						'source': 'roadnet',
+						'layout': {},
+						'paint': {
+							'line-color': '#f00',
+							'line-width': 4,
+							'line-opacity': 0.3
+						}
+					});
+				});
+			}
+
+			function addBuildings() {
+				map.loadImage("../source/img/building1.jpg", (error, image) => {
+					if (error) throw error;
+					map.addImage("building1", image);
+				})
+				map.loadImage("../source/img/building2.jpg", (error, image) => {
+					if (error) throw error;
+					map.addImage("building2", image);
+				})
+				
+				map.addSource('szbuild', {
+					'type': 'vector',
+					'scheme': 'tms',
+					'tiles': [
+						'https://basin.csceccloud.net:9000/tomcat/geoserver/' +
+						'gwc/service/tms/1.0.0/tongan:buildings_84_3857@EPSG:900913@pbf/{z}/{x}/{y}.pbf'
+					]
+				});
+				map.addLayer({
+					'id': 'buildinds',
+					'source': 'szbuild',
+					'source-layer': 'buildings_84_3857',
+					'type': 'fill-extrusion',
+					"minzoom": 15,
+					// "maxzoom": 18,
+					'paint': {
+						'fill-extrusion-color': [
+							'interpolate',
+							['linear'],
+							['get', 'height'],
+							0, 'rgb(170, 85, 0)',
+							75, 'rgb(170, 170, 127)',
+							150, "rgb(170, 255, 255)",
+						],
+						// 'fill-extrusion-pattern':'building1',
+						'fill-extrusion-height': ['get', 'height'],
+						'fill-extrusion-opacity': 1
+					},
+				});
+				
+				map.addLayer({
+					'id': 'buildinds-top',
+					'source': 'szbuild',
+					'source-layer': 'buildings_84_3857',
+					'type': 'fill-extrusion',
+					"minzoom": 15,
+					// "maxzoom": 18,
+					'paint': {
+						'fill-extrusion-color': "#94a4af",
+						'fill-extrusion-height': ['get', 'height'],
+						'fill-extrusion-base': ['get', 'height'],
+						'fill-extrusion-opacity': 1
+					},
+				});
+			}
+		</script>
+
+	</body>
+</html>

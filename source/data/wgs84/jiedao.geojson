@@ -1,0 +1,24 @@
+{
+"type": "FeatureCollection",
+"name": "jiedao",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
+"features": [
+{ "type": "Feature", "properties": { "town_id": 10, "town_name": "璜土镇" }, "geometry": { "type": "Point", "coordinates": [ 120.037101204677342, 31.874905820642169 ] } },
+{ "type": "Feature", "properties": { "town_id": 11, "town_name": "利港街道" }, "geometry": { "type": "Point", "coordinates": [ 120.080234614980526, 31.921718265580967 ] } },
+{ "type": "Feature", "properties": { "town_id": 12, "town_name": "申港街道" }, "geometry": { "type": "Point", "coordinates": [ 120.135040857224496, 31.888588617974065 ] } },
+{ "type": "Feature", "properties": { "town_id": 13, "town_name": "夏港街道" }, "geometry": { "type": "Point", "coordinates": [ 120.206905104541349, 31.89731693540724 ] } },
+{ "type": "Feature", "properties": { "town_id": 14, "town_name": "南闸街道" }, "geometry": { "type": "Point", "coordinates": [ 120.246154581812945, 31.855237528186592 ] } },
+{ "type": "Feature", "properties": { "town_id": 15, "town_name": "云亭街道" }, "geometry": { "type": "Point", "coordinates": [ 120.336923461242407, 31.864520372402119 ] } },
+{ "type": "Feature", "properties": { "town_id": 16, "town_name": "周庄镇" }, "geometry": { "type": "Point", "coordinates": [ 120.412179733193398, 31.870649487210141 ] } },
+{ "type": "Feature", "properties": { "town_id": 17, "town_name": "月城镇" }, "geometry": { "type": "Point", "coordinates": [ 120.219492817493389, 31.805151934654329 ] } },
+{ "type": "Feature", "properties": { "town_id": 18, "town_name": "青阳镇" }, "geometry": { "type": "Point", "coordinates": [ 120.271155303741466, 31.765580853085069 ] } },
+{ "type": "Feature", "properties": { "town_id": 19, "town_name": "祝塘镇" }, "geometry": { "type": "Point", "coordinates": [ 120.408201654122408, 31.771663684572893 ] } },
+{ "type": "Feature", "properties": { "town_id": 20, "town_name": "华士镇" }, "geometry": { "type": "Point", "coordinates": [ 120.466609916334136, 31.830057804626037 ] } },
+{ "type": "Feature", "properties": { "town_id": 21, "town_name": "长泾镇" }, "geometry": { "type": "Point", "coordinates": [ 120.477528203759206, 31.749456599724965 ] } },
+{ "type": "Feature", "properties": { "town_id": 22, "town_name": "顾山镇" }, "geometry": { "type": "Point", "coordinates": [ 120.551681895779708, 31.735512995943278 ] } },
+{ "type": "Feature", "properties": { "town_id": 23, "town_name": "徐霞客镇" }, "geometry": { "type": "Point", "coordinates": [ 120.343540119663601, 31.753761483710456 ] } },
+{ "type": "Feature", "properties": { "town_id": 24, "town_name": "新桥镇" }, "geometry": { "type": "Point", "coordinates": [ 120.503633799804177, 31.803290365608884 ] } },
+{ "type": "Feature", "properties": { "town_id": 25, "town_name": "澄江街道" }, "geometry": { "type": "Point", "coordinates": [ 120.282446753388143, 31.901652550157682 ] } },
+{ "type": "Feature", "properties": { "town_id": 26, "town_name": "城东街道" }, "geometry": { "type": "Point", "coordinates": [ 120.347335745714204, 31.922525609574556 ] } }
+]
+}

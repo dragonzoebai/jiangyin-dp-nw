@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>某片区的房价情况</title>
+		<style>
+			html,
+			body,
+			#map {
+				width: 100%;
+				height: 100%;
+				margin: 0;
+				padding: 0;
+			}
+		</style>
+	</head>
+
+	<body>
+		<div id="map"></div>
+		<script src="https://cdn.bootcdn.net/ajax/libs/jquery/1.10.0/jquery.min.js"></script>
+		<script src="https://webapi.amap.com/maps?v=2.0&key=aafaa3ac90c4c7dd7aa48eb587a5c66f"></script>
+		<script src="https://webapi.amap.com/loca?v=2.0.0&key=aafaa3ac90c4c7dd7aa48eb587a5c66f"></script>
+
+		<script>
+			var map = new AMap.Map('map', {
+				zoom: 11.8,
+				center: [120.343182, 31.808262],
+				pitch: 50,
+				// rotation: 205,
+				showLabel: false,
+				mapStyle: 'amap://styles/darkblue',
+				viewMode: '3D',
+			});
+
+			var loca = new Loca.Container({
+				map,
+			});
+			
+			var geo = new Loca.GeoJSONSource({
+				url: '../source/data/gcj02/jiedao.geojson',
+			});
+
+			// 文字主体图层
+			var zMarker = new Loca.ZMarkerLayer({
+				loca: loca,
+				zIndex: 120,
+			});
+			zMarker.setSource(geo);
+			zMarker.setStyle({
+				content: (i, feat) => {
+					var props = feat.properties;
+					var leftColor = props.price < 60000 ? 'rgba(0, 28, 52, 0.6)' : 'rgba(33,33,33,0.6)';
+					var rightColor = props.price < 60000 ? '#038684' : 'rgba(172, 137, 51, 0.3)';
+					var borderColor = props.price < 60000 ? '#038684' : 'rgba(172, 137, 51, 1)';
+					return (
+						'<div style="width: 490px; height: 228px; padding: 0 0;">' +
+						'<p style="display: block; height:80px; line-height:80px;font-size:40px;background-image: linear-gradient(to right, ' +
+						leftColor + ',' + leftColor + ',' + rightColor + ',rgba(0,0,0,0.4)); border:4px solid ' +
+						borderColor +
+						'; color:#fff; border-radius: 15px; text-align:center; margin:0; padding:5px;">' +
+						props['town_name'] +
+						': ' +
+						(props['town_id']) +
+						'</p><span style="width: 130px; height: 130px; margin: 0 auto; display: block; background: url(https://a.amap.com/Loca/static/loca-v2/demos/images/prism_' +
+						(props['town_id'] < 60000 ? 'blue' : 'yellow') + '.png);"></span></div>'
+					);
+				},
+				unit: 'meter',
+				rotation: 0,
+				alwaysFront: true,
+				size: [4900, 2220],
+				altitude: 0,
+			});
+
+			// 浮动三角
+			var triangleZMarker = new Loca.ZMarkerLayer({
+				loca: loca,
+				zIndex: 119,
+			});
+			triangleZMarker.setSource(geo);
+			triangleZMarker.setStyle({
+				content: (i, feat) => {
+					return (
+						'<div style="width: 120px; height: 120px; background: url(https://a.amap.com/Loca/static/loca-v2/demos/images/triangle_' +
+						(feat.properties.town_id < 60000 ? 'blue' : 'yellow') +
+						'.png);"></div>'
+					);
+				},
+				unit: 'meter',
+				rotation: 0,
+				alwaysFront: true,
+				size: [1200, 1200],
+				altitude: 15,
+			});
+			triangleZMarker.addAnimate({
+				key: 'altitude',
+				value: [0, 1],
+				random: true,
+				transform: 1000,
+				delay: 2000,
+				yoyo: true,
+				repeat: 999999,
+			});
+
+			// 呼吸点 蓝色
+			var scatterBlue = new Loca.ScatterLayer({
+				loca,
+				zIndex: 110,
+				opacity: 1,
+				visible: true,
+				zooms: [2, 26],
+				depth: false,
+			});
+
+			scatterBlue.setSource(geo);
+			scatterBlue.setStyle({
+				unit: 'meter',
+				size: function(i, feat) {
+					return feat.properties.town_id < 60000 ? [1800, 1800] : [0, 0];
+				},
+				texture: 'https://a.amap.com/Loca/static/loca-v2/demos/images/scan_blue.png',
+				altitude: 20,
+				duration: 2000,
+				animate: true,
+			});
+
+			// 呼吸点 金色
+			var scatterYellow = new Loca.ScatterLayer({
+				loca,
+				zIndex: 110,
+				opacity: 1,
+				visible: true,
+				zooms: [2, 26],
+				depth: false
+			});
+
+			scatterYellow.setSource(geo);
+			scatterYellow.setStyle({
+				unit: 'meter',
+				size: function(i, feat) {
+					return feat.properties.price > 60000 ? [90, 90] : [0, 0];
+				},
+				texture: 'https://a.amap.com/Loca/static/loca-v2/demos/images/scan_yellow.png',
+				altitude: 20,
+				duration: 2000,
+				animate: true,
+			});
+
+			// 启动帧
+			loca.animate.start();
+		</script>
+	</body>
+
+</html>
