@@ -293,7 +293,7 @@
 						polyline: {
 							positions: curvePointsArr,
 							width: 8,
-							material: material,
+							// material: material,
 							material: new Cesium.PolylineCityLinkMaterialProperty({
 								color: new Cesium.Color(5.0, 5.0, 8.0),
 								duration: 2000
@@ -362,7 +362,7 @@
 						// 	color: Cesium.Color.ORANGERED.withAlpha(0.9)
 						// })
 						line.polyline.material= new Cesium.PolylineCityLinkMaterialProperty({
-							color: new Cesium.Color(5.0, 5.0, 8.0),
+							color: Cesium.Color.AQUA.withAlpha(0.1),
 							duration: 2000
 						});
 						line.polyline.width = 2;
@@ -480,7 +480,7 @@
 			// addWaterLayer()
 			// addWaterLayer1()
 			addWaterLayer2()
-			// addRoadnet()
+			addRoadnet()
 			addDistrictLine()
 			addBuildings()
 		</script>
