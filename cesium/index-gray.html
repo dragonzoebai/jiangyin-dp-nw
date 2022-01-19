@@ -3,12 +3,12 @@
 	<head>
 		<meta charset="utf-8">
 		<!-- <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests"> -->
-		<title>江阴大屏-wgs84-灰色</title>
-		<link href="../source/index.css"
-			rel="stylesheet">
+		<title>江阴大屏-wgs84-暗色背景</title>
+		<link href="../source/index.css" rel="stylesheet">
 		<link href="https://cesium.com/downloads/cesiumjs/releases/1.73/Build/Cesium/Widgets/widgets.css"
 			rel="stylesheet">
 		<script src="https://cesium.com/downloads/cesiumjs/releases/1.73/Build/Cesium/Cesium.js"></script>
+		<script src="./libs/cesium-d3kit.js"></script>
 		<script src="./PolylineTrailLinkMaterialProperty.js"></script>
 		<style>
 			html,
@@ -28,7 +28,7 @@
 		<div class="right-shade"></div>
 		<div class="bottom-shade"></div>
 		<div class="top-shade"></div>
-		
+
 		<script>
 			Cesium.Ion.defaultAccessToken =
 				'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI3N2FhYzAyOC1kYzcxLTQwZWUtYWI2MC0wNDJhZTJhZGQ4ZTIiLCJpZCI6MzQyMzUsImlhdCI6MTYwMDA0OTU5NH0.SlTb3WwEkqzriXXOnS6mW3qnICyxH84BF9l6UuAh8ao';
@@ -37,6 +37,7 @@
 				infoBox: false,
 				selectionIndicator: false,
 				animation: false,
+				shouldAnimate: true,
 				timeline: false,
 				fullscreenButton: false,
 				homeButton: false,
@@ -44,7 +45,7 @@
 				geocoder: false,
 				baseLayerPicker: false,
 				navigationHelpButton: false,
-				
+
 				// 地形夸张系数
 				// terrainExaggeration: 1.5,
 				// terrainProvider: Cesium.createWorldTerrain(),
@@ -53,11 +54,14 @@
 				// 	// url: 'https://basin.csceccloud.net:9000/tomcat/dem/pukou_tiles/gcj02',
 				// 	isSct: false
 				// }),
-				imageryProvider: new Cesium.UrlTemplateImageryProvider({
-					url : 'https://server.arcgisonline.com/arcgis/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
-					// url: "https://t0.tianditu.gov.cn/img_w/wmts?service=wmts&request=GetTile&version=1.0.0&LAYER=img&tileMatrixSet=w&TileMatrix={z}&TileRow={y}&TileCol={x}&style=default&format=tiles&tk=f484caa12ea994ef1543e56b4fe79b50",
-					// url: "https://webst01.is.autonavi.com/appmaptile?style=6&x={x}&y={y}&z={z}",
-					maximumLevel: 16
+				// imageryProvider: new Cesium.UrlTemplateImageryProvider({
+				// 	url : 'https://server.arcgisonline.com/arcgis/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
+				// 	// url: "https://t0.tianditu.gov.cn/img_w/wmts?service=wmts&request=GetTile&version=1.0.0&LAYER=img&tileMatrixSet=w&TileMatrix={z}&TileRow={y}&TileCol={x}&style=default&format=tiles&tk=f484caa12ea994ef1543e56b4fe79b50",
+				// 	// url: "https://webst01.is.autonavi.com/appmaptile?style=6&x={x}&y={y}&z={z}",
+				// 	maximumLevel: 16
+				// })
+				imageryProvider: new Cesium.SingleTileImageryProvider({
+					url: '../source/img/BlackMarble_2016-1.jpg'
 				})
 			});
 			if (Cesium.FeatureDetection.supportsImageRenderingPixelated()) { //判断是否支持图像渲染像素化处理
@@ -71,8 +75,9 @@
 			viewer.scene.globe.depthTestAgainstTerrain = false; //解决地形遮挡entity问题
 
 			let scene = viewer.scene;
+			let d3kit = new Cesium.D3Kit(viewer)
 			// scene.fog.density = 0.005
-			
+
 			// 视角定位 flyTo、setView
 			// viewer.camera.setView({
 			scene.camera.setView({
@@ -82,12 +87,12 @@
 					pitch: Cesium.Math.toRadians(-35.0),
 				}
 			});
-			
+
 			// viewer.camera.changed.addEventListener(()=>{
 			// 	// 当前高度
 			// 	let height= viewer.camera.positionCartographic.height;
 			// });
-			
+
 			var startPoint = {
 				name: '运维中心',
 				lnglat: [120.343182, 31.808262]
@@ -123,14 +128,26 @@
 					description: startPoint.name,
 					position: new Cesium.Cartesian3.fromDegrees(startPoint.lnglat[0], startPoint.lnglat[1], 100),
 					billboard: billboard,
-					ellipse: ellipse
+					// ellipse: ellipse
 				})
 				viewer.entities.add(gltf);
+				
+				// 底图旋转
+				d3kit.craeteDynamicCricleGraphics({
+					center: {
+						lng: startPoint.lnglat[0],
+						lat: startPoint.lnglat[1],
+						alt: 1
+					},
+					radius: 2000,
+					scale: 1500
+				})
 			}
-			
+
 
 			var billboardScale = 1;
 			var billboardScaleFlag = true;
+
 			function billboardCallbackProperty() {
 				if (billboardScaleFlag) {
 					billboardScale = billboardScale - 0.001
@@ -145,7 +162,7 @@
 				}
 				return billboardScale
 			}
-			
+
 			/**
 			 * 添加水厂数据
 			 */
@@ -267,8 +284,12 @@
 					sewageLineCustomDataSource.entities.add({
 						polyline: {
 							positions: curvePointsArr,
-							width: 4,
-							material: material
+							width: 8,
+							// material: material,
+							material: new Cesium.PolylineCityLinkMaterialProperty({
+								color: new Cesium.Color(5.0, 5.0, 8.0),
+								duration: 2000
+							})
 						}
 					});
 				})
@@ -311,12 +332,12 @@
 				viewer.dataSources.add(
 					Cesium.GeoJsonDataSource.load('../source/data/wgs84/districtPolyline.geojson', {
 						stroke: Cesium.Color.YELLOW,
-						strokeWidth: 3,
+						strokeWidth: 1,
 						clampToGround: true, // 贴地
 					})
 				);
 			}
-			
+
 			// 道路线数据
 			function addRoadnet() {
 				var promiseroute11 = Cesium.GeoJsonDataSource.load('../source/data/wgs84/roadnet.geojson', {
@@ -327,12 +348,16 @@
 					Routes11 = dataSource.entities.values;
 					for (var i = 0; i < Routes11.length; i++) {
 						var line = Routes11[i];
-						line.polyline.material = Cesium.Color.WHITE.withAlpha(0.5)
+						// line.polyline.material = Cesium.Color.WHITE.withAlpha(0.5)
 						// line.polyline.material = new Cesium.PolylineGlowMaterialProperty({ //设置Glow材质
 						// 	glowPower: 0.1,
 						// 	color: Cesium.Color.ORANGERED.withAlpha(0.9)
 						// })
-						line.polyline.width = 1;
+						line.polyline.material= new Cesium.PolylineCityLinkMaterialProperty({
+							color: Cesium.Color.AQUA.withAlpha(0.1),
+							duration: 2000
+						});
+						line.polyline.width = 2;
 					}
 				}).otherwise(function(error) {
 					console.log(error);
@@ -387,7 +412,7 @@
 					console.log(error);
 				});
 			}
-			
+
 
 			/**
 			 * 加载水面方式二
@@ -421,28 +446,28 @@
 					viewer.scene.primitives.add(primitive);
 				});
 			}
-			
+
 			function addWaterLayer() {
 				viewer.dataSources.add(
 					Cesium.GeoJsonDataSource.load('../source/data/wgs84/river.geojson', {
-						fill: new Cesium.Color(25/255, 147/255, 181/255, 0.8),
+						fill: new Cesium.Color(25 / 255, 147 / 255, 181 / 255, 0.8),
 						clampToGround: true, // 贴地
 					})
 				);
 			}
-			
+
 			// 增加楼块儿
-			function addBuildings(){
+			function addBuildings() {
 				var palaceTileset = new Cesium.Cesium3DTileset({
 					url: 'https://basin.csceccloud.net:9000/tomcat/jiangyin/buildings84-blue/tileset.json'
 				})
-				palaceTileset.readyPromise.then((argument)=> {
+				palaceTileset.readyPromise.then((argument) => {
 					console.log('准备加载楼块儿')
 					viewer.scene.primitives.add(palaceTileset);
 				})
 			}
-			
-			
+
+
 			addCenter()
 			getSewage()
 			// addWaterLayer()
